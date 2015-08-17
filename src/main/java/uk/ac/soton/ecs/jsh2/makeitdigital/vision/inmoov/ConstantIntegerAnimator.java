@@ -27,52 +27,59 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package uk.ac.soton.ecs.summerschool.vision101;
+package uk.ac.soton.ecs.jsh2.makeitdigital.vision.inmoov;
 
-import java.awt.Dimension;
-import java.awt.GridBagLayout;
-import java.io.IOException;
-
-import javax.swing.JPanel;
-
-import org.openimaj.content.slideshow.Slide;
-import org.openimaj.content.slideshow.SlideshowApplication;
-
-import uk.ac.soton.ecs.summerschool.vision101.utils.VideoCaptureComponent;
+import org.openimaj.content.animation.animator.AbstractValueAnimator;
 
 /**
- * Slide showing simple video capture and display
+ * A {@link org.openimaj.content.animation.animator.ValueAnimator} that is
+ * constant for a fixed period.
  *
  * @author Jonathon Hare (jsh2@ecs.soton.ac.uk)
  *
  */
-public class SimpleCameraDemo implements Slide {
-	protected VideoCaptureComponent vc;
-	private String devName;
+public class ConstantIntegerAnimator extends AbstractValueAnimator<Integer> {
+	private int duration = -1;
+	private int count = 0;
+	private int value;
 
-	public SimpleCameraDemo(String devName) {
-		this.devName = devName;
+	public ConstantIntegerAnimator(int initial) {
+		super(initial, 0, 0);
+		this.value = initial;
+	}
+
+	public ConstantIntegerAnimator(int initial, int duration) {
+		super(initial, 0, 0);
+		this.duration = duration;
+		this.value = initial;
+	}
+
+	public ConstantIntegerAnimator(int initial, int startWait, int stopWait) {
+		super(initial, startWait, stopWait);
+		this.value = initial;
+	}
+
+	public ConstantIntegerAnimator(int initial, int startWait, int stopWait, int duration) {
+		super(initial, startWait, stopWait);
+		this.duration = duration;
+		this.value = initial;
 	}
 
 	@Override
-	public JPanel getComponent(int width, int height) throws IOException {
-		// the main panel
-		final JPanel base = new JPanel();
-		base.setOpaque(false);
-		base.setPreferredSize(new Dimension(width, height));
-		base.setLayout(new GridBagLayout());
-		vc = new VideoCaptureComponent(640, 480, devName);
-		base.add(vc);
-
-		return base;
+	protected Integer makeNextValue() {
+		count++;
+		return value;
 	}
 
 	@Override
-	public void close() {
-		vc.close();
+	protected void resetToInitial() {
+		// Do nothing
 	}
 
-	public static void main(String[] args) throws IOException {
-		new SlideshowApplication(new SimpleCameraDemo("FaceTime"), 1024, 768, App.getBackground());
+	@Override
+	protected boolean complete() {
+		if (duration > 0 && count >= duration)
+			return true;
+		return false;
 	}
 }

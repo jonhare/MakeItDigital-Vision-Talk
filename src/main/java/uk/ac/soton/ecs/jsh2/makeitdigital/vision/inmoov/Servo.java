@@ -27,7 +27,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package uk.ac.soton.ecs.summerschool.vision101.inmoov;
+package uk.ac.soton.ecs.jsh2.makeitdigital.vision.inmoov;
 
 import org.openimaj.content.animation.animator.ValueAnimator;
 

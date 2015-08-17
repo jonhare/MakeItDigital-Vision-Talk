@@ -27,7 +27,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package uk.ac.soton.ecs.summerschool.vision101;
+package uk.ac.soton.ecs.jsh2.makeitdigital.vision;
 
 import java.awt.Component;
 import java.awt.Dimension;
@@ -63,7 +63,7 @@ import org.openimaj.math.geometry.point.Point2dImpl;
 import org.openimaj.video.VideoDisplay;
 import org.openimaj.video.VideoDisplayListener;
 
-import uk.ac.soton.ecs.summerschool.vision101.utils.VideoCaptureComponent;
+import uk.ac.soton.ecs.jsh2.makeitdigital.vision.utils.VideoCaptureComponent;
 
 /**
  * Demonstration of Linear classification (with the Perceptron) using simple

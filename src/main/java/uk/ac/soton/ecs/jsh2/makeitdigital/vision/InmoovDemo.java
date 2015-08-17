@@ -27,7 +27,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package uk.ac.soton.ecs.summerschool.vision101;
+package uk.ac.soton.ecs.jsh2.makeitdigital.vision;
 
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
@@ -65,9 +65,9 @@ import org.openimaj.math.geometry.point.Point2dImpl;
 import org.openimaj.video.VideoDisplay;
 import org.openimaj.video.VideoDisplayListener;
 
-import uk.ac.soton.ecs.summerschool.vision101.inmoov.Servo;
-import uk.ac.soton.ecs.summerschool.vision101.inmoov.ServoController;
-import uk.ac.soton.ecs.summerschool.vision101.utils.VideoCaptureComponent;
+import uk.ac.soton.ecs.jsh2.makeitdigital.vision.inmoov.Servo;
+import uk.ac.soton.ecs.jsh2.makeitdigital.vision.inmoov.ServoController;
+import uk.ac.soton.ecs.jsh2.makeitdigital.vision.utils.VideoCaptureComponent;
 
 /**
  * Demos for the inmoov robot (counting and face tracking).
