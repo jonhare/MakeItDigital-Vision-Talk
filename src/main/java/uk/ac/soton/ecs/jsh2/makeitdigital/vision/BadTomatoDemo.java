@@ -236,7 +236,7 @@ public class BadTomatoDemo implements Slide, ActionListener, VideoDisplayListene
 		}
 	}
 
-	private void doClassify(double[] mean) {
+	private Float[] doClassify(double[] mean) {
 		if (points.size() > 0) {
 			final DoubleNearestNeighboursExact nn = new DoubleNearestNeighboursExact(
 					points.toArray(new double[points.size()][]));
@@ -244,7 +244,7 @@ public class BadTomatoDemo implements Slide, ActionListener, VideoDisplayListene
 
 			if (neighbours.get(0).second > 0.05) {
 				guess.setText("unknown");
-				return;
+				return RGBColour.MAGENTA;
 			}
 
 			final int[] counts = new int[CLASSES.length];
@@ -264,10 +264,11 @@ public class BadTomatoDemo implements Slide, ActionListener, VideoDisplayListene
 
 			if (counts.length == 1 || counts[0] > counts[1]) {
 				guess.setText(this.classType.getItemAt(indices[0]));
-				return;
+				return COLOURS[indices[0]];
 			}
 		}
 		guess.setText("unknown");
+		return RGBColour.MAGENTA;
 	}
 
 	/**
@@ -387,9 +388,9 @@ public class BadTomatoDemo implements Slide, ActionListener, VideoDisplayListene
 		featureField.setText(formatVector(lastMean));
 
 		redraw();
-		doClassify(lastMean);
+		final Float[] col = doClassify(lastMean);
 
-		frame.createRenderer(RenderHints.ANTI_ALIASED).drawShape(circle, 3, RGBColour.MAGENTA);
+		frame.createRenderer(RenderHints.ANTI_ALIASED).drawShape(circle, 3, col);
 	}
 
 	/**
