@@ -30,7 +30,10 @@
 package uk.ac.soton.ecs.jsh2.makeitdigital.vision;
 
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Graphics2D;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -43,12 +46,20 @@ import org.openimaj.content.slideshow.VideoSlide;
 import org.openimaj.video.VideoDisplay.EndAction;
 
 /**
- * ECS Summer School Computer Vision Lecture
+ * BBC Make It Digital: Computer Vision Talk
  */
 public class App {
-	private static int SLIDE_WIDTH = 1024;
-	private static int SLIDE_HEIGHT = 768;
 	private static BufferedImage background = null;
+	static int SLIDE_WIDTH;
+	static int SLIDE_HEIGHT;
+
+	static {
+		final GraphicsDevice device = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
+		final Dimension size = device.getDefaultConfiguration().getBounds().getSize();
+
+		SLIDE_WIDTH = size.width;
+		SLIDE_HEIGHT = SLIDE_WIDTH * 9 / 16;
+	}
 
 	/**
 	 * Main method
@@ -63,7 +74,7 @@ public class App {
 		for (int i = 1; i <= 5; i++)
 			slides.add(new PictureSlide(App.class.getResource(String.format("slides/slides.%03d.jpg", i))));
 
-		slides.add(new VideoSlide(App.class.getResource("grader.mp4"), App.class.getResource("slides/slides.006.jpg"),
+		slides.add(new VideoSlide(App.class.getResource("tomato.mp4"), App.class.getResource("slides/slides.006.jpg"),
 				EndAction.PAUSE_AT_END));
 
 		slides.add(new PictureSlide(App.class.getResource("slides/slides.007.jpg")));
@@ -85,7 +96,7 @@ public class App {
 		for (int i = 28; i <= 29; i++)
 			slides.add(new PictureSlide(App.class.getResource(String.format("slides/slides.%03d.jpg", i))));
 
-		slides.add(new SimpleMeanColourFeatureDemo()); // 30
+		// slides.add(new SimpleMeanColourFeatureDemo()); // 30
 		slides.add(new StickyFeaturesDemo()); // 31
 		slides.add(new PDMDemo()); // EXTRA
 		slides.add(new CLMDemo()); // 32
@@ -94,12 +105,12 @@ public class App {
 		for (int i = 34; i <= 39; i++)
 			slides.add(new PictureSlide(App.class.getResource(String.format("slides/slides.%03d.jpg", i))));
 
-		slides.add(new LinearClassifierDemo()); // 40
+		slides.add(new BadTomatoDemo()); // 40
 
 		for (int i = 41; i <= 47; i++)
 			slides.add(new PictureSlide(App.class.getResource(String.format("slides/slides.%03d.jpg", i))));
 
-		new SlideshowApplication(slides, 1024, 768, getBackground());
+		new SlideshowApplication(slides, SLIDE_WIDTH, SLIDE_HEIGHT, getBackground());
 	}
 
 	/**
@@ -113,5 +124,29 @@ public class App {
 			g.fillRect(0, 0, background.getWidth(), background.getHeight());
 		}
 		return background;
+	}
+
+	public static int getVideoWidth(int remainder) {
+		final int avail = SLIDE_WIDTH - remainder;
+		if (avail > 1280)
+			return 1280;
+		if (avail > 720)
+			return 720;
+		if (avail > 640)
+			return 640;
+		return 320;
+	}
+
+	public static int getVideoHeight(int remainder) {
+		final int width = getVideoWidth(remainder);
+		switch (width) {
+		case 1280:
+			return 720;
+		case 720:
+			return 576;
+		case 640:
+			return 480;
+		}
+		return 240;
 	}
 }
