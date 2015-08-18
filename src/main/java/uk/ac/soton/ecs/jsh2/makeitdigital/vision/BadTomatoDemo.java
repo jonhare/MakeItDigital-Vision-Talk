@@ -1,32 +1,3 @@
-/**
- * Copyright (c) 2015, The University of Southampton.
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- *   * 	Redistributions of source code must retain the above copyright notice,
- * 	this list of conditions and the following disclaimer.
- *
- *   *	Redistributions in binary form must reproduce the above copyright notice,
- * 	this list of conditions and the following disclaimer in the documentation
- * 	and/or other materials provided with the distribution.
- *
- *   *	Neither the name of the University of Southampton nor the names of its
- * 	contributors may be used to endorse or promote products derived from this
- * 	software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
 package uk.ac.soton.ecs.jsh2.makeitdigital.vision;
 
 import java.awt.Component;
@@ -39,7 +10,6 @@ import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 
 import javax.swing.Box;
@@ -47,9 +17,14 @@ import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
+import javax.swing.JSpinner;
 import javax.swing.JTextField;
+import javax.swing.SpinnerNumberModel;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.openimaj.content.slideshow.Slide;
@@ -63,97 +38,26 @@ import org.openimaj.image.colour.RGBColour;
 import org.openimaj.image.pixel.Pixel;
 import org.openimaj.image.processing.resize.ResizeProcessor;
 import org.openimaj.image.renderer.RenderHints;
+import org.openimaj.knn.DoubleNearestNeighboursExact;
 import org.openimaj.math.geometry.point.Point2dImpl;
 import org.openimaj.math.geometry.shape.Circle;
 import org.openimaj.math.geometry.shape.Rectangle;
+import org.openimaj.util.array.ArrayUtils;
+import org.openimaj.util.pair.IntDoublePair;
 import org.openimaj.video.VideoDisplay;
 import org.openimaj.video.VideoDisplayListener;
 
 import uk.ac.soton.ecs.jsh2.makeitdigital.vision.utils.VideoCaptureComponent;
 
 /**
- * Demonstration of Linear classification (with the Perceptron) using simple
- * average colour features for classify green vs red tomatoes.
+ * Demonstration of KNN using simple average colour features for classify green
+ * vs red tomatoes.
  *
  * @author Jonathon Hare (jsh2@ecs.soton.ac.uk)
  */
-public class BadTomatoDemo implements Slide, ActionListener, VideoDisplayListener<MBFImage> {
-	/**
-	 * A really simple perceptron
-	 *
-	 * @author Jonathon Hare (jsh2@ecs.soton.ac.uk)
-	 *
-	 */
-	private static class SimplePerceptron {
-		double alpha = 0.01;
-		double[] w;
-
-		/**
-		 * Train the perceptron
-		 *
-		 * @param pts
-		 *            the data points (2d)
-		 * @param classes
-		 *            the classes (0/1)
-		 */
-		public void train(List<double[]> pts, List<Integer> classes) {
-			this.w = new double[] { 1, 0, 0 };
-
-			for (int i = 0; i < 1000; i++) {
-				iteration(pts, classes);
-
-				final double error = error(pts, classes);
-				if (error < 0.01)
-					break;
-			}
-		}
-
-		private double error(List<double[]> pts, List<Integer> classes) {
-			double error = 0;
-
-			for (int i = 0; i < pts.size(); i++) {
-				error += Math.abs(predict(pts.get(i)) - classes.get(i));
-			}
-
-			return error / pts.size();
-		}
-
-		private void iteration(List<double[]> pts, List<Integer> classes) {
-			for (int i = 0; i < pts.size(); i++)
-				update(pts.get(i), classes.get(i));
-		}
-
-		private void update(double[] pt, int clazz) {
-			final int y = predict(pt);
-
-			w[0] = w[0] + alpha * (clazz - y);
-			w[1] = w[1] + alpha * (clazz - y) * pt[0];
-			w[2] = w[2] + alpha * (clazz - y) * pt[1];
-		}
-
-		/**
-		 * Predict the class of the given point
-		 *
-		 * @param pt
-		 *            the point
-		 * @return 0 or 1
-		 */
-		public int predict(double[] pt) {
-			return w[0] + pt[0] * w[1] + pt[1] * w[2] > 0 ? 1 : 0;
-		}
-
-		/**
-		 * Compute y-ordinate of a point on the hyperplane given the x-ordinate
-		 *
-		 * @param x
-		 *            the x-ordinate
-		 * @return the y-ordinate
-		 */
-		public double computeHyperplanePoint(double x) {
-			return (w[0] + w[1] * x) / -w[2];
-		}
-	}
-
+public class BadTomatoDemo implements Slide, ActionListener, VideoDisplayListener<MBFImage>, ChangeListener {
+	private static final int CIRCLE_THICKNESS = 4;
+	private static final int CIRCLE_SIZE = 15;
 	private static final int POINT_SIZE = 10;
 
 	private static final int GRAPH_WIDTH = 600;
@@ -182,18 +86,19 @@ public class BadTomatoDemo implements Slide, ActionListener, VideoDisplayListene
 
 	private volatile List<double[]> points;
 	private volatile List<Integer> classes;
-	private volatile SimplePerceptron classifier;
+	private volatile int k;
 	private Circle circle;
 
 	@Override
 	public Component getComponent(int width, int height) throws IOException {
 		points = new ArrayList<double[]>();
 		classes = new ArrayList<Integer>();
-		classifier = new SimplePerceptron();
+		k = 1;
 
 		circle = new Circle(VIDEO_WIDTH / 2, VIDEO_HEIGHT / 2, VIDEO_HEIGHT / 8);
 
 		vc = new VideoCaptureComponent(VIDEO_WIDTH, VIDEO_HEIGHT);
+
 		vc.getDisplay().addVideoListener(this);
 
 		// the main panel
@@ -204,7 +109,6 @@ public class BadTomatoDemo implements Slide, ActionListener, VideoDisplayListene
 
 		// left hand side (video, features)
 		final Box videoCtrls = Box.createVerticalBox();
-		videoCtrls.setOpaque(false);
 		videoCtrls.add(vc);
 		videoCtrls.add(Box.createVerticalStrut(10));
 		final JPanel colourspacesPanel = createColourSpaceButtons();
@@ -217,6 +121,14 @@ public class BadTomatoDemo implements Slide, ActionListener, VideoDisplayListene
 		// right hand box
 		final Box rightPanel = Box.createVerticalBox();
 		rightPanel.setOpaque(false);
+
+		guess = new JTextField(8);
+		guess.setOpaque(false);
+		guess.setFont(Font.decode("Monaco-48"));
+		guess.setHorizontalAlignment(JTextField.CENTER);
+		guess.setEditable(false);
+		rightPanel.add(guess);
+
 		image = new MBFImage(GRAPH_WIDTH, GRAPH_HEIGHT, ColourSpace.RGB);
 		image.fill(RGBColour.WHITE);
 		imageComp = new DisplayUtilities.ImageComponent(true, false);
@@ -226,6 +138,7 @@ public class BadTomatoDemo implements Slide, ActionListener, VideoDisplayListene
 		imageComp.setAllowPanning(false);
 		rightPanel.add(imageComp);
 		final JPanel classCtrlsCnt = new JPanel(new GridLayout(1, 2));
+		classCtrlsCnt.setOpaque(false);
 
 		// learning controls
 		final JPanel learnCtrls = new JPanel(new GridLayout(0, 1));
@@ -243,12 +156,13 @@ public class BadTomatoDemo implements Slide, ActionListener, VideoDisplayListene
 		// classification controls
 		final JPanel classCtrls = new JPanel(new GridLayout(0, 1));
 		classCtrls.setOpaque(false);
-		guess = new JTextField(8);
-		guess.setOpaque(false);
-		guess.setFont(Font.decode("Monaco-24"));
-		guess.setHorizontalAlignment(JTextField.CENTER);
-		guess.setEditable(false);
-		classCtrls.add(guess);
+		final JPanel cnt = new JPanel();
+		cnt.setOpaque(false);
+		cnt.add(new JLabel("K:"));
+		final JSpinner kField = new JSpinner(new SpinnerNumberModel(k, 1, 10, 1));
+		kField.addChangeListener(this);
+		cnt.add(kField);
+		classCtrls.add(cnt);
 		classCtrlsCnt.add(classCtrls);
 
 		rightPanel.add(classCtrlsCnt);
@@ -323,22 +237,35 @@ public class BadTomatoDemo implements Slide, ActionListener, VideoDisplayListene
 	}
 
 	private void doClassify(double[] mean) {
-		final HashSet<Integer> clzCount = new HashSet<Integer>();
-		clzCount.addAll(classes);
+		if (points.size() > 0) {
+			final DoubleNearestNeighboursExact nn = new DoubleNearestNeighboursExact(
+					points.toArray(new double[points.size()][]));
+			final List<IntDoublePair> neighbours = nn.searchKNN(mean, k);
 
-		if (points.size() > 0 && clzCount.size() == 2) {
-			final double[] p1 = new double[] { 0, 0 };
-			p1[1] = (float) classifier.computeHyperplanePoint(0);
+			if (neighbours.get(0).second > 0.05) {
+				guess.setText("unknown");
+				return;
+			}
 
-			final double[] p2 = new double[] { 1, 0 };
-			p2[1] = (float) classifier.computeHyperplanePoint(1);
+			final int[] counts = new int[CLASSES.length];
+			for (final IntDoublePair p : neighbours) {
+				counts[this.classes.get(p.first)]++;
 
-			image.drawLine(projectPoint(p1), projectPoint(p2), 3, RGBColour.BLACK);
+				final double[] pt = this.points.get(p.first);
+				final Point2dImpl pti = projectPoint(pt);
+				image.drawPoint(pti, RGBColour.MAGENTA, POINT_SIZE);
 
+				image.drawShape(new Circle(pti, CIRCLE_SIZE), CIRCLE_THICKNESS, RGBColour.GREEN);
+			}
 			imageComp.setImage(bimg = ImageUtilities.createBufferedImageForDisplay(image, bimg));
 
-			guess.setText(this.classType.getItemAt(classifier.predict(mean)));
-			return;
+			final int[] indices = ArrayUtils.range(0, counts.length - 1);
+			ArrayUtils.parallelQuicksortDescending(counts, indices);
+
+			if (counts.length == 1 || counts[0] > counts[1]) {
+				guess.setText(this.classType.getItemAt(indices[0]));
+				return;
+			}
 		}
 		guess.setText("unknown");
 	}
@@ -365,14 +292,6 @@ public class BadTomatoDemo implements Slide, ActionListener, VideoDisplayListene
 	private void doLearn(double[] mean, int clazz) {
 		this.points.add(mean);
 		this.classes.add(clazz);
-
-		final HashSet<Integer> clzCount = new HashSet<Integer>();
-		clzCount.addAll(classes);
-
-		if (points.size() > 0 && clzCount.size() == 2) {
-			classifier.train(points, classes);
-		}
-
 		redraw();
 	}
 
@@ -487,6 +406,11 @@ public class BadTomatoDemo implements Slide, ActionListener, VideoDisplayListene
 			sb.append(String.format(", %1.3f", vector[i]));
 		sb.append("]");
 		return sb.toString();
+	}
+
+	@Override
+	public void stateChanged(ChangeEvent e) {
+		this.k = (Integer) ((JSpinner) e.getSource()).getValue();
 	}
 
 	public static void main(String[] args) throws IOException {
