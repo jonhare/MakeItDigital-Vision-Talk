@@ -60,8 +60,8 @@ public class BadTomatoDemo implements Slide, ActionListener, VideoDisplayListene
 	private static final int CIRCLE_SIZE = 15;
 	private static final int POINT_SIZE = 10;
 
-	private static final int GRAPH_WIDTH = 600;
-	private static final int GRAPH_HEIGHT = 600;
+	private static final int GRAPH_WIDTH = 500;
+	private static final int GRAPH_HEIGHT = 500;
 	private static final int AXIS_WIDTH = GRAPH_WIDTH - 100;
 	private static final int AXIS_HEIGHT = GRAPH_HEIGHT - 100;
 	private static final int AXIS_OFFSET_X = 50;

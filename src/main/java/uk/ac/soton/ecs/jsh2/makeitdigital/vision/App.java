@@ -34,10 +34,14 @@ import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
+import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.imageio.ImageIO;
 
 import org.openimaj.content.slideshow.PictureSlide;
 import org.openimaj.content.slideshow.Slide;
@@ -121,7 +125,15 @@ public class App {
 			background = new BufferedImage(SLIDE_WIDTH, SLIDE_HEIGHT, BufferedImage.TYPE_3BYTE_BGR);
 			final Graphics2D g = background.createGraphics();
 			g.setColor(Color.WHITE);
+			g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
 			g.fillRect(0, 0, background.getWidth(), background.getHeight());
+
+			final URL bgImageUrl = App.class.getResource("background.jpg");
+			try {
+				final BufferedImage b = ImageIO.read(bgImageUrl);
+				g.drawImage(b, 0, 0, SLIDE_WIDTH, SLIDE_HEIGHT, null);
+			} catch (final IOException e) {
+			}
 		}
 		return background;
 	}
@@ -130,8 +142,8 @@ public class App {
 		final int avail = SLIDE_WIDTH - remainder;
 		if (avail > 1280)
 			return 1280;
-		if (avail > 720)
-			return 720;
+		if (avail > 960)
+			return 960;
 		if (avail > 640)
 			return 640;
 		return 320;
@@ -142,8 +154,8 @@ public class App {
 		switch (width) {
 		case 1280:
 			return 720;
-		case 720:
-			return 576;
+		case 960:
+			return 540;
 		case 640:
 			return 480;
 		}
