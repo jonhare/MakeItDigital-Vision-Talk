@@ -29,17 +29,23 @@
  */
 package uk.ac.soton.ecs.jsh2.makeitdigital.vision;
 
-import java.awt.GridBagConstraints;
+import java.awt.image.BufferedImage;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import javax.imageio.ImageIO;
 import javax.swing.JEditorPane;
 import javax.swing.JPanel;
+import javax.swing.OverlayLayout;
+import javax.swing.text.Document;
+import javax.swing.text.html.HTMLEditorKit;
+import javax.swing.text.html.StyleSheet;
 
 import org.openimaj.content.slideshow.Slide;
 import org.openimaj.content.slideshow.SlideshowApplication;
@@ -50,6 +56,7 @@ import org.openimaj.image.ImageUtilities;
 import org.openimaj.image.MBFImage;
 import org.openimaj.image.feature.local.engine.DoGSIFTEngine;
 import org.openimaj.image.feature.local.keypoints.Keypoint;
+import org.openimaj.image.processing.resize.ResizeProcessor;
 import org.openimaj.io.IOUtils;
 import org.openimaj.math.geometry.transforms.HomographyModel;
 import org.openimaj.math.geometry.transforms.HomographyRefinement;
@@ -73,6 +80,8 @@ public class ArtARDemo extends SimpleCameraDemo implements Slide, VideoDisplayLi
 	private JEditorPane labelField;
 	private MBFImage currentFrame;
 	private volatile boolean isRunning;
+	private BufferedImage bgImage;
+	private String current;
 
 	public ArtARDemo() throws IOException {
 		super("FaceTime");
@@ -89,6 +98,12 @@ public class ArtARDemo extends SimpleCameraDemo implements Slide, VideoDisplayLi
 		data = IOUtils.read(new DataInputStream(ArtARDemo.class.getResourceAsStream("artARdemo.dat")));
 	}
 
+	public ArtARDemo(URL background) throws IOException {
+		this();
+		if (background != null)
+			bgImage = ImageIO.read(background);
+	}
+
 	@Override
 	public void close() {
 		isRunning = false;
@@ -97,23 +112,48 @@ public class ArtARDemo extends SimpleCameraDemo implements Slide, VideoDisplayLi
 
 	@Override
 	public JPanel getComponent(int width, int height) throws IOException {
-		final JPanel panel = super.getComponent(width, height);
+		final JPanel container = new JPanel();
+		container.setSize(width, height);
+		container.setPreferredSize(container.getSize());
+
+		final OverlayLayout overlay = new OverlayLayout(container);
+		container.setLayout(overlay);
 
 		labelField = new JEditorPane();
-		labelField.setSize(640, 100);
+		labelField.setOpaque(false);
+		labelField.setSize(App.getVideoWidth(0) - 50, App.getVideoHeight(0) - 50);
 		labelField.setPreferredSize(labelField.getSize());
+		labelField.setMaximumSize(labelField.getSize());
 		labelField.setContentType("text/html");
 
-		final GridBagConstraints gbc = new GridBagConstraints();
-		gbc.gridy = 1;
-		panel.add(labelField, gbc);
+		// add a HTMLEditorKit to the editor pane
+		final HTMLEditorKit kit = new HTMLEditorKit();
+		labelField.setEditorKit(kit);
+
+		final StyleSheet styleSheet = kit.getStyleSheet();
+		styleSheet.addRule("body {color:#FF00FF; font-family:courier;}");
+		styleSheet.addRule("h1 {font-size: 60pt}");
+		styleSheet.addRule("h2 {font-size: 50pt }");
+
+		final Document doc = kit.createDefaultDocument();
+		labelField.setDocument(doc);
+
+		// final GridBagConstraints gbc = new GridBagConstraints();
+		// gbc.gridy = 1;
+		// panel.add(labelField, gbc);
+		container.add(labelField);
+		// labelField.setAlignmentX(0.5f);
+		// labelField.setAlignmentY(0.5f);
+
+		final JPanel panel = super.getComponent(width, height, bgImage);
+		container.add(panel);
 
 		vc.getDisplay().addVideoListener(this);
 
 		isRunning = true;
 		new Thread(this).start();
 
-		return panel;
+		return container;
 	}
 
 	@Override
@@ -143,23 +183,28 @@ public class ArtARDemo extends SimpleCameraDemo implements Slide, VideoDisplayLi
 			if (frame == null)
 				continue;
 
-			final LocalFeatureList<Keypoint> features = engine.findFeatures(frame.flatten());
+			final LocalFeatureList<Keypoint> features = engine.findFeatures(ResizeProcessor.resizeMax(frame.flatten(),
+					640));
 
 			boolean found = false;
 			for (final Entry<List<Keypoint>, String> e : data.entrySet()) {
 				matcher.setModelFeatures(e.getKey());
 
 				if (matcher.findMatches(features) && matcher.getMatches().size() > 35) {
-					if (labelField.getText() != e.getValue())
-						labelField.setText(e.getValue());
+					if (current != e.getValue()) {
+						current = e.getValue();
+						labelField.setText(current);
+					}
 
 					found = true;
 					break;
 				}
 			}
 
-			if (!found)
+			if (!found) {
 				labelField.setText("");
+				current = "";
+			}
 		}
 	}
 
@@ -182,7 +227,7 @@ public class ArtARDemo extends SimpleCameraDemo implements Slide, VideoDisplayLi
 			IOUtils.writeToFile(data, new File("src/main/resources/uk/ac/soton/ecs/summerschool/vision101/artARdemo.dat"));
 		}
 
-		new SlideshowApplication(new ArtARDemo(), 1024, 768, App.getBackground());
+		new SlideshowApplication(new ArtARDemo(App.class.getResource("slides/slides.010.jpg")), App.SLIDE_WIDTH,
+				App.SLIDE_HEIGHT, App.getBackground());
 	}
-
 }

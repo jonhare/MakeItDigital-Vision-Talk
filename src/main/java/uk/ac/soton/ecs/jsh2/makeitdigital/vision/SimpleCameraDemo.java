@@ -30,7 +30,11 @@
 package uk.ac.soton.ecs.jsh2.makeitdigital.vision;
 
 import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.GridBagLayout;
+import java.awt.RenderingHints;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 
 import javax.swing.JPanel;
@@ -56,12 +60,28 @@ public class SimpleCameraDemo implements Slide {
 
 	@Override
 	public JPanel getComponent(int width, int height) throws IOException {
+		return getComponent(width, height, null);
+	}
+
+	public JPanel getComponent(final int width, final int height, final BufferedImage bgImage) throws IOException {
 		// the main panel
-		final JPanel base = new JPanel();
+		final JPanel base = new JPanel() {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public void paintComponent(Graphics g) {
+				((Graphics2D) g).setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+
+				super.paintComponent(g);
+
+				if (bgImage != null)
+					g.drawImage(bgImage, 0, 0, width, height, null);
+			}
+		};
 		base.setOpaque(false);
 		base.setPreferredSize(new Dimension(width, height));
 		base.setLayout(new GridBagLayout());
-		vc = new VideoCaptureComponent(640, 480, devName);
+		vc = new VideoCaptureComponent(App.getVideoWidth(0), App.getVideoHeight(0), devName);
 		base.add(vc);
 
 		return base;
@@ -73,6 +93,6 @@ public class SimpleCameraDemo implements Slide {
 	}
 
 	public static void main(String[] args) throws IOException {
-		new SlideshowApplication(new SimpleCameraDemo("FaceTime"), 1024, 768, App.getBackground());
+		new SlideshowApplication(new SimpleCameraDemo("FaceTime"), App.SLIDE_WIDTH, App.SLIDE_HEIGHT, App.getBackground());
 	}
 }

@@ -3,15 +3,20 @@ package uk.ac.soton.ecs.jsh2.makeitdigital.vision;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
+import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.imageio.ImageIO;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
@@ -88,9 +93,14 @@ public class BadTomatoDemo implements Slide, ActionListener, VideoDisplayListene
 	private volatile List<Integer> classes;
 	private volatile int k;
 	private Circle circle;
+	private BufferedImage bgImage;
+
+	public BadTomatoDemo(URL bgImageUrl) throws IOException {
+		bgImage = ImageIO.read(bgImageUrl);
+	}
 
 	@Override
-	public Component getComponent(int width, int height) throws IOException {
+	public Component getComponent(final int width, final int height) throws IOException {
 		points = new ArrayList<double[]>();
 		classes = new ArrayList<Integer>();
 		k = 1;
@@ -102,7 +112,19 @@ public class BadTomatoDemo implements Slide, ActionListener, VideoDisplayListene
 		vc.getDisplay().addVideoListener(this);
 
 		// the main panel
-		final JPanel base = new JPanel();
+		final JPanel base = new JPanel() {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			protected void paintComponent(Graphics g) {
+				((Graphics2D) g).setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+
+				super.paintComponent(g);
+
+				if (bgImage != null)
+					g.drawImage(bgImage, 0, 0, width, height, null);
+			}
+		};
 		base.setOpaque(false);
 		base.setPreferredSize(new Dimension(width, height));
 		base.setLayout(new GridBagLayout());
@@ -415,6 +437,7 @@ public class BadTomatoDemo implements Slide, ActionListener, VideoDisplayListene
 	}
 
 	public static void main(String[] args) throws IOException {
-		new SlideshowApplication(new BadTomatoDemo(), App.SLIDE_WIDTH, App.SLIDE_HEIGHT, App.getBackground());
+		new SlideshowApplication(new BadTomatoDemo(App.class.getResource("slides/slides.004.jpg")), App.SLIDE_WIDTH,
+				App.SLIDE_HEIGHT, App.getBackground());
 	}
 }

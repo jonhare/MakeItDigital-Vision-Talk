@@ -31,6 +31,7 @@ package uk.ac.soton.ecs.jsh2.makeitdigital.vision;
 
 import gnu.trove.map.hash.TObjectIntHashMap;
 
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -39,6 +40,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import javax.imageio.ImageIO;
 import javax.swing.JPanel;
 
 import org.openimaj.content.slideshow.SlideshowApplication;
@@ -67,6 +69,7 @@ public class PuppeteerDemo extends SimpleCameraDemo implements VideoDisplayListe
 	private List<IndependentPair<MBFImage, List<Triangle>>> puppets = new ArrayList<IndependentPair<MBFImage, List<Triangle>>>();
 	private TObjectIntHashMap<TrackedFace> puppetAssignments = new TObjectIntHashMap<TrackedFace>();
 	private int nextPuppet = 0;
+	private BufferedImage bgImage;
 
 	/**
 	 * Default constructor.
@@ -74,14 +77,17 @@ public class PuppeteerDemo extends SimpleCameraDemo implements VideoDisplayListe
 	 * @throws MalformedURLException
 	 * @throws IOException
 	 */
-	public PuppeteerDemo() throws MalformedURLException, IOException {
-		super("iSight");
+	public PuppeteerDemo(URL bgImageUrl) throws MalformedURLException, IOException {
+		super("FaceTime");
 		tracker.fcheck = true;
+		tracker.model.getInitialVars().faceDetector.set_min_size(100);
+
+		bgImage = ImageIO.read(bgImageUrl);
 
 		final CLMFaceTracker ptracker = new CLMFaceTracker();
 
 		final URL[] puppetUrls = {
-				PuppeteerDemo.class.getResource("images/mark.jpg")
+				PuppeteerDemo.class.getResource("images/inmoov.jpg")
 		};
 
 		for (final URL url : puppetUrls) {
@@ -198,7 +204,7 @@ public class PuppeteerDemo extends SimpleCameraDemo implements VideoDisplayListe
 
 	@Override
 	public JPanel getComponent(int width, int height) throws IOException {
-		final JPanel c = super.getComponent(width, height);
+		final JPanel c = super.getComponent(width, height, bgImage);
 
 		this.vc.getDisplay().addVideoListener(this);
 
@@ -210,6 +216,7 @@ public class PuppeteerDemo extends SimpleCameraDemo implements VideoDisplayListe
 	 * @throws IOException
 	 */
 	public static void main(String[] args) throws IOException {
-		new SlideshowApplication(new PuppeteerDemo(), 1024, 768, App.getBackground());
+		new SlideshowApplication(new PuppeteerDemo(App.class.getResource("slides/slides.015.jpg")), App.SLIDE_WIDTH,
+				App.SLIDE_HEIGHT, App.getBackground());
 	}
 }

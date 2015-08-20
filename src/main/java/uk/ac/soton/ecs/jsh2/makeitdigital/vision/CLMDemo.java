@@ -31,9 +31,15 @@ package uk.ac.soton.ecs.jsh2.makeitdigital.vision;
 
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.GridBagLayout;
+import java.awt.RenderingHints;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.net.URL;
 
+import javax.imageio.ImageIO;
 import javax.swing.JPanel;
 
 import org.openimaj.content.slideshow.Slide;
@@ -66,18 +72,36 @@ import Jama.Matrix;
 public class CLMDemo implements Slide, VideoDisplayListener<MBFImage> {
 	CLMFaceTracker tracker = new CLMFaceTracker();
 	protected VideoCaptureComponent vc;
+	private BufferedImage bgImage;
+
+	public CLMDemo(URL bgImageUrl) throws IOException {
+		this.bgImage = ImageIO.read(bgImageUrl);
+	}
 
 	@Override
-	public JPanel getComponent(int width, int height) throws IOException {
+	public JPanel getComponent(final int width, final int height) throws IOException {
 		// the main panel
-		final JPanel base = new JPanel();
+		final JPanel base = new JPanel() {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public void paintComponent(Graphics g) {
+				((Graphics2D) g).setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+
+				super.paintComponent(g);
+
+				if (bgImage != null)
+					g.drawImage(bgImage, 0, 0, width, height, null);
+			}
+		};
 		base.setPreferredSize(new Dimension(width, height));
 		base.setLayout(new GridBagLayout());
-		vc = new VideoCaptureComponent(640, 480, "iSight");
+		vc = new VideoCaptureComponent(App.getVideoWidth(0), App.getVideoHeight(0), "FaceTime");
 		vc.getDisplay().addVideoListener(this);
 		base.add(vc);
 
 		tracker.fcheck = true;
+		tracker.model.getInitialVars().faceDetector.set_min_size(100);
 
 		return base;
 	}
@@ -96,12 +120,10 @@ public class CLMDemo implements Slide, VideoDisplayListener<MBFImage> {
 	public void beforeUpdate(MBFImage frame) {
 		tracker.track(frame);
 
-		frame.bands.get(1).fill(0f);
-		frame.bands.get(2).fill(0f);
-
-		final FontStyle<Float[]> gfs = new GeneralFont("Bank Gothic", Font.PLAIN).createStyle(frame
+		final FontStyle<Float[]> gfs = new GeneralFont("Courier", Font.PLAIN).createStyle(frame
 				.createRenderer(RenderHints.ANTI_ALIASED));
-		gfs.setFontSize(40);
+		gfs.setFontSize(80);
+		gfs.setColour(RGBColour.MAGENTA);
 		gfs.setHorizontalAlignment(HorizontalAlignment.HORIZONTAL_CENTER);
 
 		if (tracker.getTrackedFaces().size() > 0) {
@@ -128,19 +150,19 @@ public class CLMDemo implements Slide, VideoDisplayListener<MBFImage> {
 			image.drawLine(
 					new Point2dImpl((float) f.shape.get(connections[0][i], 0),
 							(float) f.shape.get(connections[0][i] + n, 0)),
-					new Point2dImpl((float) f.shape.get(connections[1][i], 0),
-							(float) f.shape.get(connections[1][i] + n, 0)),
-					3, RGBColour.WHITE);
+							new Point2dImpl((float) f.shape.get(connections[1][i], 0),
+									(float) f.shape.get(connections[1][i] + n, 0)),
+									5, RGBColour.BLUE);
 		}
 
 		final double[] shapeVector = f.clm._plocal.getColumnPackedCopy();
 
-		final int middle = 560;
+		final int middle = (int) (0.875 * image.getWidth());
 		final int starty = 100;
 		for (int i = 0; i < shapeVector.length; i++) {
-			final int y = starty + i * 10;
+			final int y = starty + i * 16;
 			final int x = (int) (middle + shapeVector[i] * 6);
-			image.drawLine(middle, y, x, y, 5, RGBColour.WHITE);
+			image.drawLine(middle, y, x, y, 8, RGBColour.RED);
 		}
 
 		final double[] poseVector = f.clm._pglobl.getColumnPackedCopy();
@@ -149,35 +171,36 @@ public class CLMDemo implements Slide, VideoDisplayListener<MBFImage> {
 		final double roll = poseVector[2];
 		final double yaw = poseVector[3];
 
-		image.drawShape(new Rectangle(50, 100, 80, 60), 3, RGBColour.WHITE);
-		image.drawShape(new Rectangle((int) (50 + poseVector[4] / 8 - 4 * sc), (int) (100 + poseVector[5] / 8 - 4 * sc),
-				(int) (4 * sc), (int) (4 * sc)), 2, RGBColour.WHITE);
+		image.drawShape(new Rectangle(50, 100, image.getWidth() / 8, image.getHeight() / 8), 5, RGBColour.CYAN);
+		image.drawShape(new Rectangle((int) (50 + poseVector[4] / 8 - 2 * sc), (int) (100 + poseVector[5] / 8 - 2 * sc),
+				(int) (4 * sc), (int) (4 * sc)), 2, RGBColour.RED);
 
 		final Matrix rpy = Simple3D.euler2Rot(pitch, roll, yaw);
 
 		Line2d l1 = new Line2d(
-				Simple3D.projectOrtho(rpy.times(new Matrix(new double[][] { { -30 }, { 0 }, { 0 } }))),
-				Simple3D.projectOrtho(rpy.times(new Matrix(new double[][] { { 30 }, { 0 }, { 0 } })))
+				Simple3D.projectOrtho(rpy.times(new Matrix(new double[][] { { -50 }, { 0 }, { 0 } }))),
+				Simple3D.projectOrtho(rpy.times(new Matrix(new double[][] { { 50 }, { 0 }, { 0 } })))
 				);
-		l1.translate(90, 300);
-		image.drawLine(l1, 2, RGBColour.WHITE);
+		l1.translate(50 + image.getWidth() / 16, 300);
+		image.drawLine(l1, 5, RGBColour.RED);
 
 		l1 = new Line2d(
-				Simple3D.projectOrtho(rpy.times(new Matrix(new double[][] { { 0 }, { -30 }, { 0 } }))),
-				Simple3D.projectOrtho(rpy.times(new Matrix(new double[][] { { 0 }, { 30 }, { 0 } })))
+				Simple3D.projectOrtho(rpy.times(new Matrix(new double[][] { { 0 }, { -50 }, { 0 } }))),
+				Simple3D.projectOrtho(rpy.times(new Matrix(new double[][] { { 0 }, { 50 }, { 0 } })))
 				);
-		l1.translate(90, 300);
-		image.drawLine(l1, 2, RGBColour.WHITE);
+		l1.translate(50 + image.getWidth() / 16, 300);
+		image.drawLine(l1, 5, RGBColour.BLUE);
 
 		l1 = new Line2d(
-				Simple3D.projectOrtho(rpy.times(new Matrix(new double[][] { { 0 }, { 0 }, { -30 } }))),
-				Simple3D.projectOrtho(rpy.times(new Matrix(new double[][] { { 0 }, { 0 }, { 30 } })))
+				Simple3D.projectOrtho(rpy.times(new Matrix(new double[][] { { 0 }, { 0 }, { -50 } }))),
+				Simple3D.projectOrtho(rpy.times(new Matrix(new double[][] { { 0 }, { 0 }, { 50 } })))
 				);
-		l1.translate(90, 300);
-		image.drawLine(l1, 2, RGBColour.WHITE);
+		l1.translate(50 + image.getWidth() / 16, 300);
+		image.drawLine(l1, 5, RGBColour.GREEN);
 	}
 
 	public static void main(String[] args) throws IOException {
-		new SlideshowApplication(new CLMDemo(), 1024, 768, App.getBackground());
+		new SlideshowApplication(new CLMDemo(App.class.getResource("slides/slides.014.jpg")), App.SLIDE_WIDTH,
+				App.SLIDE_HEIGHT, App.getBackground());
 	}
 }

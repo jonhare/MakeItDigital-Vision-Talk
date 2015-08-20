@@ -75,50 +75,35 @@ public class App {
 	public static void main(String[] args) throws IOException {
 		final List<Slide> slides = new ArrayList<Slide>();
 
-		for (int i = 1; i <= 5; i++)
-			slides.add(new PictureSlide(App.class.getResource(String.format("slides/slides.%03d.jpg", i))));
-
-		slides.add(new VideoSlide(App.class.getResource("tomato.mp4"), App.class.getResource("slides/slides.006.jpg"),
+		slides.add(new PictureSlide(App.class.getResource("slides/slides.001.jpg")));
+		slides.add(new PictureSlide(App.class.getResource("slides/slides.002.jpg")));
+		slides.add(new PictureSlide(App.class.getResource("slides/slides.003.jpg")));
+		slides.add(new BadTomatoDemo(App.class.getResource("slides/slides.004.jpg")));
+		slides.add(new VideoSlide(App.class.getResource("tomato.mp4"), App.class.getResource("slides/slides.005.jpg"),
 				EndAction.PAUSE_AT_END));
-
-		slides.add(new PictureSlide(App.class.getResource("slides/slides.007.jpg")));
-
-		slides.add(new VideoSlide(App.class.getResource("cars.mp4"), App.class.getResource("slides/slides.008.jpg"),
+		slides.add(new PictureSlide(App.class.getResource("slides/slides.006.jpg")));
+		slides.add(new VideoSlide(App.class.getResource("car.mp4"), App.class.getResource("slides/slides.007.jpg"),
 				EndAction.PAUSE_AT_END));
+		slides.add(new InmoovDemo(App.class.getResource("slides/slides.008.jpg")));
 
-		slides.add(new InmoovDemo()); // 9
-
-		slides.add(new PictureSlide(App.class.getResource("slides/slides.010.jpg")));
-
-		slides.add(new ArtARDemo()); // 11
-
-		for (int i = 12; i <= 26; i++)
-			slides.add(new PictureSlide(App.class.getResource(String.format("slides/slides.%03d.jpg", i))));
-
-		slides.add(new SimpleCameraDemo("iSight")); // 27
-
-		for (int i = 28; i <= 29; i++)
-			slides.add(new PictureSlide(App.class.getResource(String.format("slides/slides.%03d.jpg", i))));
-
-		// slides.add(new SimpleMeanColourFeatureDemo()); // 30
-		slides.add(new StickyFeaturesDemo()); // 31
-		slides.add(new PDMDemo()); // EXTRA
-		slides.add(new CLMDemo()); // 32
-		slides.add(new PuppeteerDemo()); // 33
-
-		for (int i = 34; i <= 39; i++)
-			slides.add(new PictureSlide(App.class.getResource(String.format("slides/slides.%03d.jpg", i))));
-
-		slides.add(new BadTomatoDemo()); // 40
-
-		for (int i = 41; i <= 47; i++)
-			slides.add(new PictureSlide(App.class.getResource(String.format("slides/slides.%03d.jpg", i))));
+		slides.add(new PictureSlide(App.class.getResource("slides/slides.009.jpg")));
+		slides.add(new ArtARDemo(App.class.getResource("slides/slides.010.jpg")));
+		slides.add(new StickyFeaturesDemo(App.class.getResource("slides/slides.011.jpg")));
+		slides.add(new PictureSlide(App.class.getResource("slides/slides.012.jpg")));
+		slides.add(new PictureSlide(App.class.getResource("slides/slides.013.jpg")));
+		slides.add(new CLMDemo(App.class.getResource("slides/slides.014.jpg")));
+		slides.add(new PuppeteerDemo(App.class.getResource("slides/slides.015.jpg"))); // TODO
+																						// someone
+																						// other
+																						// than
+																						// Mark
+		slides.add(new PictureSlide(App.class.getResource("slides/slides.016.jpg")));
 
 		new SlideshowApplication(slides, SLIDE_WIDTH, SLIDE_HEIGHT, getBackground());
 	}
 
 	/**
-	 * @return the slide background
+	 * @return the generic slide background
 	 */
 	public synchronized static BufferedImage getBackground() {
 		if (background == null) {

@@ -29,14 +29,19 @@
  */
 package uk.ac.soton.ecs.jsh2.makeitdigital.vision;
 
+import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.net.URL;
 
+import javax.imageio.ImageIO;
 import javax.swing.JPanel;
 
 import org.openimaj.content.slideshow.SlideshowApplication;
 import org.openimaj.image.FImage;
 import org.openimaj.image.MBFImage;
 import org.openimaj.image.colour.RGBColour;
+import org.openimaj.image.processing.resize.ResizeProcessor;
+import org.openimaj.math.geometry.point.Point2dImpl;
 import org.openimaj.video.VideoDisplay;
 import org.openimaj.video.VideoDisplayListener;
 import org.openimaj.video.tracking.klt.Feature;
@@ -54,11 +59,14 @@ public class StickyFeaturesDemo extends SimpleCameraDemo implements VideoDisplay
 	private KLTTracker tracker;
 	private boolean firstframe = true;
 	private FImage prevFrame;
+	private BufferedImage bgImage;
 
-	public StickyFeaturesDemo() {
-		super("iSight");
+	public StickyFeaturesDemo(URL bgImageUrl) throws IOException {
+		super("FaceTime");
 
-		final int nFeatures = 100;
+		bgImage = ImageIO.read(bgImageUrl);
+
+		final int nFeatures = 200;
 		final TrackingContext tc = new TrackingContext();
 		final FeatureList fl = new FeatureList(nFeatures);
 		tracker = new KLTTracker(tc, fl);
@@ -68,7 +76,7 @@ public class StickyFeaturesDemo extends SimpleCameraDemo implements VideoDisplay
 
 	@Override
 	public JPanel getComponent(int width, int height) throws IOException {
-		final JPanel f = super.getComponent(width, height);
+		final JPanel f = super.getComponent(width, height, bgImage);
 		this.vc.getDisplay().addVideoListener(this);
 		return f;
 	}
@@ -80,7 +88,9 @@ public class StickyFeaturesDemo extends SimpleCameraDemo implements VideoDisplay
 
 	@Override
 	public void beforeUpdate(MBFImage frame) {
-		final FImage currentFrame = frame.flatten();
+		final FImage currentFrame = ResizeProcessor.resizeMax(frame.flatten(), 640);
+		final float sf = (float) ((double) frame.getWidth() / (double) currentFrame.width);
+
 		if (firstframe) {
 			tracker.selectGoodFeatures(currentFrame);
 			firstframe = false;
@@ -89,14 +99,20 @@ public class StickyFeaturesDemo extends SimpleCameraDemo implements VideoDisplay
 			tracker.replaceLostFeatures(currentFrame);
 		}
 		this.prevFrame = currentFrame.clone();
+
+		final Point2dImpl pt = new Point2dImpl();
 		for (final Feature f : tracker.getFeatureList()) {
 			if (f.val >= 0) {
-				frame.drawPoint(f, RGBColour.GREEN, 5);
+				pt.x = f.x * sf;
+				pt.y = f.y * sf;
+				frame.drawPoint(pt, RGBColour.GREEN, 5);
 			}
 		}
 	}
 
 	public static void main(String[] args) throws IOException {
-		new SlideshowApplication(new StickyFeaturesDemo(), 1024, 768, App.getBackground());
+		new SlideshowApplication(new StickyFeaturesDemo(App.class.getResource("slides/slides.011.jpg")), App.SLIDE_WIDTH,
+				App.SLIDE_HEIGHT,
+				App.getBackground());
 	}
 }

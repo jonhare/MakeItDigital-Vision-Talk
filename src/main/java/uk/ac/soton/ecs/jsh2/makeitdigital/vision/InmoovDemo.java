@@ -33,16 +33,22 @@ import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 
 import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
+import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.imageio.ImageIO;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -76,12 +82,11 @@ import uk.ac.soton.ecs.jsh2.makeitdigital.vision.utils.VideoCaptureComponent;
  *
  */
 public class InmoovDemo implements Slide, VideoDisplayListener<MBFImage>, ActionListener, KeyListener {
-	protected static final int PAN_CENTRE_PW = 2075;
-	protected static final int TILT_CENTRE_PW = 850;
+	protected static final int PAN_CENTRE_PW = 1900;
+	protected static final int PAN_PIN = 0;
 
 	ServoController controller;
 	final Servo pan;
-	final Servo tilt;
 
 	protected VideoCaptureComponent vc;
 	protected transient boolean doFaces = false;
@@ -93,22 +98,34 @@ public class InmoovDemo implements Slide, VideoDisplayListener<MBFImage>, Action
 	final HaarCascadeDetector faceDetector = HaarCascadeDetector.BuiltInCascade.frontalface_alt2.load();
 	Point2d frameCentre;
 	private JLabel panLabel;
-	private JLabel tiltLabel;
+	private BufferedImage bgImage;
 
-	public InmoovDemo() {
-		pan = new Servo(7, PAN_CENTRE_PW);
-		tilt = new Servo(15, TILT_CENTRE_PW);
-		faceDetector.setMinSize(40);
+	public InmoovDemo(URL bgImageUrl) throws IOException {
+		bgImage = ImageIO.read(bgImageUrl);
+		pan = new Servo(PAN_PIN, PAN_CENTRE_PW);
+		faceDetector.setMinSize(80);
 	}
 
 	@Override
-	public JPanel getComponent(int width, int height) throws IOException {
+	public JPanel getComponent(final int width, final int height) throws IOException {
 		// the main panel
-		final JPanel base = new JPanel();
+		final JPanel base = new JPanel() {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public void paintComponent(Graphics g) {
+				((Graphics2D) g).setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+
+				super.paintComponent(g);
+
+				if (bgImage != null)
+					g.drawImage(bgImage, 0, 0, width, height, null);
+			}
+		};
 		base.setOpaque(false);
 		base.setPreferredSize(new Dimension(width, height));
 		base.setLayout(new GridBagLayout());
-		vc = new VideoCaptureComponent(640, 480, "Hercules");
+		vc = new VideoCaptureComponent(App.getVideoWidth(200), App.getVideoHeight(200), "Hercules");
 		base.add(vc);
 
 		// add a listener for new video frames
@@ -123,8 +140,6 @@ public class InmoovDemo implements Slide, VideoDisplayListener<MBFImage>, Action
 
 		panLabel = new JLabel("Pan = 0000");
 		controlsPanel.add(panLabel);
-		tiltLabel = new JLabel("Tilt = 0000");
-		controlsPanel.add(tiltLabel);
 
 		base.add(controlsPanel);
 
@@ -137,7 +152,6 @@ public class InmoovDemo implements Slide, VideoDisplayListener<MBFImage>, Action
 		try {
 			controller = new ServoController();
 			controller.registerServo(pan);
-			controller.registerServo(tilt);
 		} catch (final Exception e) {
 			controller = null;
 			System.err.println("Failed to initialise serial port connection");
@@ -178,7 +192,6 @@ public class InmoovDemo implements Slide, VideoDisplayListener<MBFImage>, Action
 	@Override
 	public void beforeUpdate(MBFImage frame) {
 		panLabel.setText(String.format("Pan = %04d", pan.getPW()));
-		tiltLabel.setText(String.format("Tilt = %04d", tilt.getPW()));
 
 		final MBFImage outframe = frame.clone();
 		if (doFaces) {
@@ -327,9 +340,6 @@ public class InmoovDemo implements Slide, VideoDisplayListener<MBFImage>, Action
 
 			if (faces == null || faces.size() == 0) {
 				// move back towards center
-				final int tiltPW = (TILT_CENTRE_PW - tilt.getPW()) / 5;
-				tilt.changePWRelative(tiltPW);
-
 				final int panPW = (PAN_CENTRE_PW - pan.getPW()) / 5;
 				pan.changePWRelative(panPW);
 			} else {
@@ -343,7 +353,6 @@ public class InmoovDemo implements Slide, VideoDisplayListener<MBFImage>, Action
 				final double damp = 0.3;
 
 				pan.changePWRelative(-(int) (damp * delta.getX()));
-				tilt.changePWRelative((int) (damp * delta.getY()));
 			}
 		} catch (final Exception e) {
 			e.printStackTrace();
@@ -357,10 +366,6 @@ public class InmoovDemo implements Slide, VideoDisplayListener<MBFImage>, Action
 
 	@Override
 	public void keyPressed(KeyEvent e) {
-		if (e.getKeyChar() == 'w')
-			tilt.increment(50);
-		if (e.getKeyChar() == 's')
-			tilt.decrement(50);
 		if (e.getKeyChar() == 'd')
 			pan.increment(50);
 		if (e.getKeyChar() == 'a')
@@ -373,7 +378,9 @@ public class InmoovDemo implements Slide, VideoDisplayListener<MBFImage>, Action
 	}
 
 	public static void main(String[] args) throws Exception {
-		new SlideshowApplication(new InmoovDemo(), 1024, 768, App.getBackground());
+		new SlideshowApplication(new InmoovDemo(App.class.getResource("slides/slides.009.jpg")), App.SLIDE_WIDTH,
+				App.SLIDE_HEIGHT,
+				App.getBackground());
 	}
 
 }
