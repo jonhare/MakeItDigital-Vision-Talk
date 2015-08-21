@@ -86,7 +86,12 @@ public class InmoovDemo implements Slide, VideoDisplayListener<MBFImage>, Action
 	protected static final int PAN_PIN = 0;
 
 	ServoController controller;
-	final Servo pan;
+	final Servo pan = new Servo(0, 1900, 1450, 2400);
+
+	final Servo eyesTilt = new Servo(2, 1900, 1600, 1950);
+	final Servo leftEye = new Servo(4, 1650, 1400, 1650);
+	final Servo rightEye = new Servo(6, 1950, 1700, 2100);
+	final Servo mouth = new Servo(8, 2000, 2000, 2450);
 
 	protected VideoCaptureComponent vc;
 	protected transient boolean doFaces = false;
@@ -102,7 +107,6 @@ public class InmoovDemo implements Slide, VideoDisplayListener<MBFImage>, Action
 
 	public InmoovDemo(URL bgImageUrl) throws IOException {
 		bgImage = ImageIO.read(bgImageUrl);
-		pan = new Servo(PAN_PIN, PAN_CENTRE_PW);
 		faceDetector.setMinSize(80);
 	}
 
@@ -152,9 +156,15 @@ public class InmoovDemo implements Slide, VideoDisplayListener<MBFImage>, Action
 		try {
 			controller = new ServoController();
 			controller.registerServo(pan);
+			controller.registerServo(eyesTilt);
+			controller.registerServo(leftEye);
+			controller.registerServo(rightEye);
+			controller.registerServo(mouth);
+			controller.start();
 		} catch (final Exception e) {
 			controller = null;
 			System.err.println("Failed to initialise serial port connection");
+			e.printStackTrace();
 		}
 
 		return base;
@@ -176,8 +186,6 @@ public class InmoovDemo implements Slide, VideoDisplayListener<MBFImage>, Action
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		System.out.println(e.getActionCommand());
-
 		if (e.getActionCommand().equals("Track Faces"))
 			this.doFaces = ((JCheckBox) e.getSource()).isSelected();
 		if (e.getActionCommand().equals("Enable Counting"))
@@ -212,10 +220,14 @@ public class InmoovDemo implements Slide, VideoDisplayListener<MBFImage>, Action
 		}
 
 		try {
-			Runtime.getRuntime().exec("say " + string);
+			mouth.setPW(2450);
+			Runtime.getRuntime().exec("say " + string).waitFor();
 			lastString = string;
 			lastTime = System.currentTimeMillis();
-		} catch (final IOException e) {
+			mouth.setPW(2000);
+			Thread.sleep(100);
+			mouth.setOff();
+		} catch (final IOException | InterruptedException e) {
 			// ignore - probably not OSX...
 		}
 	}
@@ -350,7 +362,7 @@ public class InmoovDemo implements Slide, VideoDisplayListener<MBFImage>, Action
 
 				final Point2d delta = pt.minus(frameCentre);
 
-				final double damp = 0.3;
+				final double damp = 0.1;
 
 				pan.changePWRelative(-(int) (damp * delta.getX()));
 			}
@@ -370,6 +382,42 @@ public class InmoovDemo implements Slide, VideoDisplayListener<MBFImage>, Action
 			pan.increment(50);
 		if (e.getKeyChar() == 'a')
 			pan.decrement(50);
+
+		if (e.getKeyChar() == 'o')
+			mouth.increment(50);
+		if (e.getKeyChar() == 'k')
+			mouth.decrement(50);
+
+		if (e.getKeyChar() == 'r') {
+			pan.setOff();
+			eyesTilt.setOff();
+			leftEye.setOff();
+			rightEye.setOff();
+			mouth.setOff();
+			try {
+				Thread.sleep(100);
+			} catch (final InterruptedException e1) {
+
+			}
+			pan.setPW(pan.getInitialPW());
+			eyesTilt.setPW(eyesTilt.getInitialPW());
+			leftEye.setPW(leftEye.getPW());
+			rightEye.setPW(rightEye.getInitialPW());
+			mouth.setPW(mouth.getInitialPW());
+
+		}
+
+		try {
+			Thread.sleep(100);
+		} catch (final InterruptedException e1) {
+
+		}
+
+		pan.setOff();
+		eyesTilt.setOff();
+		leftEye.setOff();
+		rightEye.setOff();
+		mouth.setOff();
 	}
 
 	@Override
@@ -378,7 +426,7 @@ public class InmoovDemo implements Slide, VideoDisplayListener<MBFImage>, Action
 	}
 
 	public static void main(String[] args) throws Exception {
-		new SlideshowApplication(new InmoovDemo(App.class.getResource("slides/slides.009.jpg")), App.SLIDE_WIDTH,
+		new SlideshowApplication(new InmoovDemo(App.class.getResource("slides/slides.008.jpg")), App.SLIDE_WIDTH,
 				App.SLIDE_HEIGHT,
 				App.getBackground());
 	}

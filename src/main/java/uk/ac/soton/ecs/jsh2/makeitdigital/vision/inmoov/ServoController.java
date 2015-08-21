@@ -62,7 +62,7 @@ public class ServoController implements Runnable, Closeable {
 		final String[] files = new File("/dev").list(new FilenameFilter() {
 			@Override
 			public boolean accept(File dir, String name) {
-				return name.startsWith("tty.usbmodem");
+				return name.startsWith("tty.usbmodem") || name.startsWith("tty.usbserial");
 			}
 		});
 
@@ -75,23 +75,27 @@ public class ServoController implements Runnable, Closeable {
 				SerialPort.DATABITS_8,
 				SerialPort.STOPBITS_1,
 				SerialPort.PARITY_NONE);
+	}
 
+	public void start() {
 		thread = new Thread(this);
 		thread.setDaemon(true);
 		thread.start();
 	}
 
-	public void registerServo(Servo servo) {
+	public synchronized void registerServo(Servo servo) {
 		final int init = servo.getInitialPW();
-		servos.put(servo, init);
-		setServo(servo.getAddress(), init);
+		servos.put(servo, 0);
+		servo.setPW(init);
+		// setServo(servo.getAddress(), init);
 	}
 
-	private void setServo(int address, int pw) {
+	private synchronized void setServo(int address, int pw) {
 		try {
-			// System.out.println(String.format("%d %d\n", address, pw));
+			System.out.println(String.format("%d %d\n", address, pw));
 			final byte[] cmd = String.format("%d %d\n", address, pw).getBytes("US-ASCII");
 			device.getOutputStream().write(cmd);
+			device.getOutputStream().flush();
 		} catch (final IOException e) {
 			e.printStackTrace();
 		}
@@ -102,28 +106,31 @@ public class ServoController implements Runnable, Closeable {
 		final int allowedTime = 1000 / FREQUENCY;
 
 		while (isRunning) {
-			final long t1 = System.currentTimeMillis();
-			for (final Entry<Servo, Integer> entry : servos.entrySet()) {
-				final Servo servo = entry.getKey();
-				final int lastPW = entry.getValue();
-				final int newPW = servo.nextPW();
-				if (lastPW != newPW) {
-					entry.setValue(newPW);
-					setServo(servo.getAddress(), newPW);
+			synchronized (this) {
+				final long t1 = System.currentTimeMillis();
+				for (final Entry<Servo, Integer> entry : servos.entrySet()) {
+					final Servo servo = entry.getKey();
+					final int lastPW = entry.getValue();
+					final int newPW = servo.nextPW();
+					if (lastPW != newPW) {
+						entry.setValue(newPW);
+						System.out.println("setting");
+						setServo(servo.getAddress(), newPW);
+					}
 				}
-			}
-			final long t2 = System.currentTimeMillis();
+				final long t2 = System.currentTimeMillis();
 
-			final long sleepTime = allowedTime - (t2 - t1);
+				final long sleepTime = allowedTime - (t2 - t1);
 
-			if (sleepTime > 0) {
-				try {
-					Thread.sleep(sleepTime);
-				} catch (final InterruptedException e) {
-					e.printStackTrace();
+				if (sleepTime > 0) {
+					try {
+						Thread.sleep(sleepTime);
+					} catch (final InterruptedException e) {
+						e.printStackTrace();
+					}
+				} else {
+					// System.err.println("Sleeptime = " + sleepTime);
 				}
-			} else {
-				// System.err.println("Sleeptime = " + sleepTime);
 			}
 		}
 

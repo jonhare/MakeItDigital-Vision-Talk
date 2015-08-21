@@ -45,10 +45,12 @@ public class Servo {
 	private int pw;
 	transient ValueAnimator<Integer> animator;
 
-	public Servo(int address, int initialPW) {
+	public Servo(int address, int initialPW, int minPW, int maxPW) {
 		super();
 		this.address = address;
 		this.initialPW = initialPW;
+		this.minPW = minPW;
+		this.maxPW = maxPW;
 	}
 
 	public int getInitialPW() {
@@ -60,9 +62,12 @@ public class Servo {
 	}
 
 	int nextPW() {
-		if (animator != null)
-			pw = animator.nextValue();
-		else
+		if (animator != null) {
+			final int next = animator.nextValue();
+			if (next == 0)
+				return 0;
+			pw = next;
+		} else
 			pw = initialPW;
 
 		return pw;
