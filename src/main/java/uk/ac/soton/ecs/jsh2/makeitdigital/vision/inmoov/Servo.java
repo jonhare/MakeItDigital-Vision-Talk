@@ -61,6 +61,14 @@ public class Servo {
 		return address;
 	}
 
+	public int getMinPW() {
+		return minPW;
+	}
+
+	public int getMaxPW() {
+		return maxPW;
+	}
+
 	int nextPW() {
 		if (animator != null) {
 			final int next = animator.nextValue();

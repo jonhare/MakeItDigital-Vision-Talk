@@ -92,7 +92,7 @@ public class ServoController implements Runnable, Closeable {
 
 	private synchronized void setServo(int address, int pw) {
 		try {
-			System.out.println(String.format("%d %d\n", address, pw));
+			// System.out.println(String.format("%d %d\n", address, pw));
 			final byte[] cmd = String.format("%d %d\n", address, pw).getBytes("US-ASCII");
 			device.getOutputStream().write(cmd);
 			device.getOutputStream().flush();
@@ -114,7 +114,7 @@ public class ServoController implements Runnable, Closeable {
 					final int newPW = servo.nextPW();
 					if (lastPW != newPW) {
 						entry.setValue(newPW);
-						System.out.println("setting");
+						// System.out.println("setting");
 						setServo(servo.getAddress(), newPW);
 					}
 				}
@@ -136,6 +136,7 @@ public class ServoController implements Runnable, Closeable {
 
 		// close the device on stop
 		try {
+			System.out.println("device closing");
 			device.close();
 		} catch (final IOException e) {
 		}
@@ -143,6 +144,7 @@ public class ServoController implements Runnable, Closeable {
 
 	@Override
 	public void close() {
+		System.out.println("controller closing");
 		isRunning = false;
 	}
 }

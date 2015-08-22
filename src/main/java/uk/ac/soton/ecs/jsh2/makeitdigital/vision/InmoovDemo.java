@@ -83,10 +83,9 @@ import uk.ac.soton.ecs.jsh2.makeitdigital.vision.utils.VideoCaptureComponent;
  */
 public class InmoovDemo implements Slide, VideoDisplayListener<MBFImage>, ActionListener, KeyListener {
 	protected static final int PAN_CENTRE_PW = 1900;
-	protected static final int PAN_PIN = 0;
 
 	ServoController controller;
-	final Servo pan = new Servo(0, 1900, 1450, 2400);
+	final Servo pan = new Servo(0, PAN_CENTRE_PW, 1450, 2400);
 
 	final Servo eyesTilt = new Servo(2, 1900, 1600, 1950);
 	final Servo leftEye = new Servo(4, 1650, 1400, 1650);
@@ -379,14 +378,28 @@ public class InmoovDemo implements Slide, VideoDisplayListener<MBFImage>, Action
 	@Override
 	public void keyPressed(KeyEvent e) {
 		if (e.getKeyChar() == 'd')
-			pan.increment(50);
-		if (e.getKeyChar() == 'a')
 			pan.decrement(50);
+		if (e.getKeyChar() == 'a')
+			pan.increment(50);
 
 		if (e.getKeyChar() == 'o')
 			mouth.increment(50);
 		if (e.getKeyChar() == 'k')
 			mouth.decrement(50);
+
+		if (e.getKeyChar() == '\'')
+			eyesTilt.increment(50);
+		if (e.getKeyChar() == '/')
+			eyesTilt.decrement(50);
+
+		if (e.getKeyChar() == 'z') {
+			leftEye.increment(50);
+			rightEye.increment(50);
+		}
+		if (e.getKeyChar() == 'x') {
+			leftEye.decrement(50);
+			rightEye.decrement(50);
+		}
 
 		if (e.getKeyChar() == 'r') {
 			pan.setOff();
