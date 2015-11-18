@@ -29,6 +29,7 @@
  */
 package uk.ac.soton.ecs.jsh2.makeitdigital.vision.utils;
 
+import java.awt.Dimension;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.io.Closeable;
@@ -116,6 +117,7 @@ public class VideoCaptureComponent extends Box implements ItemListener, Closeabl
 		}
 
 		final JPanel videoDisplayPanel = new JPanel();
+		videoDisplayPanel.setMinimumSize(new Dimension(width, height));
 		videoDisplayPanel.setOpaque(false);
 		display = VideoDisplay.createVideoDisplay(vc, videoDisplayPanel);
 		add(videoDisplayPanel);

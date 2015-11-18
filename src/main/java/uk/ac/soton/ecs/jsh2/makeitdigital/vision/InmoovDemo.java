@@ -91,6 +91,7 @@ public class InmoovDemo implements Slide, VideoDisplayListener<MBFImage>, Action
 	final Servo leftEye = new Servo(4, 1650, 1400, 1650);
 	final Servo rightEye = new Servo(6, 1950, 1700, 2100);
 	final Servo mouth = new Servo(8, 2000, 2000, 2450);
+	final Servo tilt = new Servo(10, 1900, 1100, 2400);
 
 	protected VideoCaptureComponent vc;
 	protected transient boolean doFaces = false;
@@ -159,6 +160,7 @@ public class InmoovDemo implements Slide, VideoDisplayListener<MBFImage>, Action
 			controller.registerServo(leftEye);
 			controller.registerServo(rightEye);
 			controller.registerServo(mouth);
+			controller.registerServo(tilt);
 			controller.start();
 		} catch (final Exception e) {
 			controller = null;
@@ -198,7 +200,7 @@ public class InmoovDemo implements Slide, VideoDisplayListener<MBFImage>, Action
 
 	@Override
 	public void beforeUpdate(MBFImage frame) {
-		panLabel.setText(String.format("Pan = %04d", pan.getPW()));
+		panLabel.setText(String.format("Pan = %04d", tilt.getPW()));
 
 		final MBFImage outframe = frame.clone();
 		if (doFaces) {
@@ -382,6 +384,11 @@ public class InmoovDemo implements Slide, VideoDisplayListener<MBFImage>, Action
 		if (e.getKeyChar() == 'a')
 			pan.increment(50);
 
+		if (e.getKeyChar() == 'w')
+			tilt.decrement(50);
+		if (e.getKeyChar() == 's')
+			tilt.increment(50);
+
 		if (e.getKeyChar() == 'o')
 			mouth.increment(50);
 		if (e.getKeyChar() == 'k')
@@ -407,6 +414,7 @@ public class InmoovDemo implements Slide, VideoDisplayListener<MBFImage>, Action
 			leftEye.setOff();
 			rightEye.setOff();
 			mouth.setOff();
+			tilt.setOff();
 			try {
 				Thread.sleep(100);
 			} catch (final InterruptedException e1) {
@@ -417,7 +425,7 @@ public class InmoovDemo implements Slide, VideoDisplayListener<MBFImage>, Action
 			leftEye.setPW(leftEye.getPW());
 			rightEye.setPW(rightEye.getInitialPW());
 			mouth.setPW(mouth.getInitialPW());
-
+			tilt.setPW(tilt.getInitialPW());
 		}
 
 		try {
