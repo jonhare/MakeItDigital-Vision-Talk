@@ -92,12 +92,12 @@ public class App {
 		slides.add(new PictureSlide(App.class.getResource("slides/slides.012.jpg")));
 		slides.add(new PictureSlide(App.class.getResource("slides/slides.013.jpg")));
 		slides.add(new CLMDemo(App.class.getResource("slides/slides.014.jpg")));
-		slides.add(new PuppeteerDemo(App.class.getResource("slides/slides.015.jpg"))); // TODO
-																						// someone
-																						// other
-																						// than
-																						// Mark
-		slides.add(new PictureSlide(App.class.getResource("slides/slides.016.jpg")));
+		slides.add(new PuppeteerDemo(App.class.getResource("slides/slides.015.jpg")));
+		//slides.add(new PictureSlide(App.class.getResource("slides/slides.016.jpg")));
+		slides.add(new PictureSlide(App.class.getResource("slides/slides.017.jpg")));
+		slides.add(new PictureSlide(App.class.getResource("slides/slides.018.jpg")));
+		slides.add(new PictureSlide(App.class.getResource("slides/slides.019.jpg")));
+		slides.add(new PictureSlide(App.class.getResource("slides/slides.020.jpg")));
 
 		new SlideshowApplication(slides, SLIDE_WIDTH, SLIDE_HEIGHT, getBackground());
 	}
